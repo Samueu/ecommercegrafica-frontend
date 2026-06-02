@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 const PROTECTED_PREFIXES = ['/checkout', '/pedidos', '/conta'];
 const ADMIN_PREFIX = '/admin';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthenticated = request.cookies.get('mock-auth')?.value === '1';
 
