@@ -1,22 +1,26 @@
-const express = require('express');
-const next = require('next');
-const { parse } = require('url');
+const express = require("express");
+const next = require("next");
 
-const dev = process.env.NODE_ENV !== 'production';
-const port = parseInt(process.env.PORT || '3000', 10);
-
-const app = next({ dev, dir: __dirname });
+const dev = process.env.NODE_ENV !== "production";
+const app = next({ dev });
 const handle = app.getRequestHandler();
+
+const port = process.env.PORT || 3000;
 
 app.prepare().then(() => {
   const server = express();
 
-  server.all('*', (req, res) => {
-    const parsedUrl = parse(req.url, true);
-    return handle(req, res, parsedUrl);
+  // Exemplo de rota customizada
+  server.get("/health", (req, res) => {
+    res.json({ status: "ok" });
+  });
+
+  // Todas as demais rotas vão para o Next
+  server.all("*", (req, res) => {
+    return handle(req, res);
   });
 
   server.listen(port, () => {
-    console.log(`> Server running at http://localhost:${port}`);
+    console.log(`Servidor rodando na porta ${port}`);
   });
 });
