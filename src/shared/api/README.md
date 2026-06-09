@@ -1,9 +1,8 @@
-# Camada de API (fase futura)
+# Camada de API
 
-Nesta fase o frontend usa **dados mockados** em `src/features/*/mocks/`.
+- `http-client.ts` — wrapper `fetch` com tratamento de erros (`ApiError`)
+- `endpoints.ts` — paths da API consumida (`NEXT_PUBLIC_API_URL`)
 
-Quando houver integração HTTP, adicionar aqui:
+## Variáveis de ambiente
 
-- `http-client.ts` — wrapper `fetch` com tratamento de erros
-- `endpoints.ts` — paths da API
-- `query-keys.ts` — factories para TanStack Query
+`NEXT_PUBLIC_API_URL` — URL base da API (default: `https://ecommercegrafica-backend.onrender.com`).

@@ -1,7 +1,9 @@
 'use client';
 
-import { mockProducts } from '@/features/catalog/mocks/products.mock';
+import { useProducts } from '@/features/catalog/hooks/useProducts';
 import { Badge } from '@/shared/components/ui/badge';
+import { ErrorState } from '@/shared/components/layout/ErrorState';
+import { Skeleton } from '@/shared/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -13,6 +15,16 @@ import {
 import { formatCurrency } from '@/shared/lib/format';
 
 export function AdminProductsTable() {
+  const { data, isLoading, isError, refetch } = useProducts();
+
+  if (isLoading) {
+    return <Skeleton className="h-48 w-full" />;
+  }
+
+  if (isError || !data) {
+    return <ErrorState onRetry={() => refetch()} />;
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -24,10 +36,10 @@ export function AdminProductsTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {mockProducts.map((product) => (
+        {data.map((product) => (
           <TableRow key={product.id}>
             <TableCell className="font-medium">{product.name}</TableCell>
-            <TableCell className="capitalize">{product.type}</TableCell>
+            <TableCell>{product.typeLabel}</TableCell>
             <TableCell>{formatCurrency(product.price, product.currency)}</TableCell>
             <TableCell>
               <Badge variant={product.active ? 'default' : 'secondary'}>
