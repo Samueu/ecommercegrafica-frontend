@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { LoginForm } from '@/features/auth';
 
 export const metadata = {
@@ -5,5 +6,11 @@ export const metadata = {
 };
 
 export default function LoginPage() {
-  return <LoginForm />;
+  // O LoginForm usa useSearchParams() para ler ?redirect=... e isso
+  // exige um Suspense boundary explícito quando há prerender estático.
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
 }
