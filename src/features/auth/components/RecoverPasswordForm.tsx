@@ -23,7 +23,10 @@ export function RecoverPasswordForm() {
   });
 
   const onSubmit = () => {
-    toast.success('Link de recuperação enviado (mock)');
+    // TODO: integrar com /api/auth/recuperar-senha quando o endpoint for criado.
+    toast.success(
+      'Se o e-mail existir em nossa base, você receberá instruções em alguns minutos.',
+    );
   };
 
   return (

@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
-import { AuthCookieSync } from '@/features/auth/components/AuthCookieSync';
+import { AuthInitializer } from '@/features/auth/components/AuthInitializer';
 import { Toaster } from '@/shared/components/ui/sonner';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthCookieSync />
+      <AuthInitializer />
       {children}
       <Toaster richColors position="top-right" />
     </QueryClientProvider>

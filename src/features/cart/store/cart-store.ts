@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Product } from '@/entities/product/product.types';
@@ -78,3 +79,25 @@ export const useCartStore = create<CartState>()(
     { name: 'ecommerce-cart' },
   ),
 );
+
+/**
+ * Indica se o componente já montou no client (e portanto o `persist` do Zustand
+ * já reidratou o estado a partir do localStorage).
+ *
+ * Componentes que dependem do conteúdo persistido (badge do carrinho, totais)
+ * devem renderizar a versão "vazia" enquanto isto for `false` para evitar o
+ * clássico erro de hidratação SSR ≠ client.
+ *
+ * Usamos o padrão "mounted state" porque ele funciona em qualquer setup do
+ * Next.js (RSC + Turbopack) — a API `useCartStore.persist.hasHydrated()` do
+ * Zustand pode retornar `undefined` durante o SSR quando não há `localStorage`.
+ */
+export function useCartHydrated(): boolean {
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  return hydrated;
+}

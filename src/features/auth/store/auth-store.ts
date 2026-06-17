@@ -1,52 +1,56 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import type { AuthRole, AuthUserDto } from '@/features/auth/api/auth.api';
 
-const AUTH_COOKIE = 'mock-auth=1; path=/; max-age=86400';
-const CLEAR_COOKIE = 'mock-auth=; path=/; max-age=0';
-
-type AuthUser = {
-  id: string;
+export type AuthUser = {
+  id: number;
   name: string;
   email: string;
-  role: 'customer' | 'admin';
+  role: AuthRole;
 };
 
 type AuthState = {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  isInitialized: boolean;
+  setUser: (dto: AuthUserDto | null) => void;
+  clearUser: () => void;
+  markInitialized: () => void;
 };
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      login: (email, password) => {
-        if (!email || password.length < 4) return false;
-        const isAdmin = email.includes('admin');
-        const user: AuthUser = {
-          id: 'mock-user-1',
-          name: isAdmin ? 'Admin Loja' : 'Cliente Demo',
-          email,
-          role: isAdmin ? 'admin' : 'customer',
-        };
-        if (typeof document !== 'undefined') {
-          document.cookie = AUTH_COOKIE;
-        }
-        set({ user, isAuthenticated: true });
-        return true;
-      },
-      logout: () => {
-        if (typeof document !== 'undefined') {
-          document.cookie = CLEAR_COOKIE;
-        }
-        set({ user: null, isAuthenticated: false });
-      },
-    }),
-    { name: 'ecommerce-auth' },
-  ),
-);
+function normalizeRole(role: AuthUserDto['role']): AuthRole {
+  return role === 'admin' ? 'admin' : 'customer';
+}
+
+function toAuthUser(dto: AuthUserDto): AuthUser {
+  return {
+    id: dto.id,
+    name: dto.nome?.trim() || dto.email,
+    email: dto.email,
+    role: normalizeRole(dto.role),
+  };
+}
+
+/**
+ * Store de leitura para o estado de autenticação.
+ *
+ * Não persiste em localStorage e não escreve cookies: a sessão real vive
+ * em cookies httpOnly emitidos pelo backend. Este store é apenas um
+ * espelho em memória do que /auth/me devolveu, para que componentes
+ * pequenos (header, guards) leiam de forma síncrona.
+ */
+export const useAuthStore = create<AuthState>()((set) => ({
+  user: null,
+  isAuthenticated: false,
+  isInitialized: false,
+  setUser: (dto) => {
+    if (!dto) {
+      set({ user: null, isAuthenticated: false, isInitialized: true });
+      return;
+    }
+    set({ user: toAuthUser(dto), isAuthenticated: true, isInitialized: true });
+  },
+  clearUser: () => set({ user: null, isAuthenticated: false, isInitialized: true }),
+  markInitialized: () => set({ isInitialized: true }),
+}));

@@ -3,11 +3,20 @@
 import Link from 'next/link';
 import { CartLineItem } from '@/features/cart/components/CartLineItem';
 import { CartSummary } from '@/features/cart/components/CartSummary';
-import { useCartStore } from '@/features/cart/store/cart-store';
+import { useCartHydrated, useCartStore } from '@/features/cart/store/cart-store';
 import { Button } from '@/shared/components/ui/button';
 
 export function CartPageContent() {
+  const hydrated = useCartHydrated();
   const items = useCartStore((s) => s.items);
+
+  if (!hydrated) {
+    return (
+      <div className="text-muted-foreground py-16 text-center text-sm">
+        Carregando carrinho…
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

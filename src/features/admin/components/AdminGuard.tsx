@@ -3,25 +3,37 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useAuthStore } from '@/features/auth/store/auth-store';
+import { useMe } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/shared/components/ui/button';
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const user = useAuthStore((s) => s.user);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: user, isLoading, isFetched } = useMe();
 
   useEffect(() => {
-    if (isAuthenticated && user?.role !== 'admin') {
+    if (!isFetched || isLoading) return;
+    if (!user) {
+      router.replace('/login?redirect=/admin');
+      return;
+    }
+    if (user.role !== 'admin') {
       router.replace('/');
     }
-  }, [isAuthenticated, user, router]);
+  }, [user, isFetched, isLoading, router]);
 
-  if (!isAuthenticated) {
+  if (isLoading || !isFetched) {
+    return (
+      <div className="text-muted-foreground flex items-center justify-center py-16 text-sm">
+        Carregando…
+      </div>
+    );
+  }
+
+  if (!user) {
     return null;
   }
 
-  if (user?.role !== 'admin') {
+  if (user.role !== 'admin') {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
         <p>Acesso restrito ao painel administrativo.</p>

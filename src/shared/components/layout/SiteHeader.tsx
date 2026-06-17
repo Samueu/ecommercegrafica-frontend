@@ -1,15 +1,31 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/store/auth-store';
+import { useLogout } from '@/features/auth/hooks/useAuth';
 import { CartDrawer } from '@/features/cart';
 import { Button } from '@/shared/components/ui/button';
 import { Container } from '@/shared/components/layout/Container';
 import { Printer } from 'lucide-react';
 
 export function SiteHeader() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const logoutMutation = useLogout();
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      toast.success('Sessão encerrada.');
+    } catch {
+      toast.success('Sessão encerrada localmente.');
+    } finally {
+      router.push('/');
+      router.refresh();
+    }
+  };
 
   return (
     <header className="border-b">
@@ -36,8 +52,14 @@ export function SiteHeader() {
               <span className="text-muted-foreground hidden text-sm sm:inline">
                 Olá, {user.name.split(' ')[0]}
               </span>
-              <Button type="button" variant="ghost" size="sm" onClick={logout}>
-                Sair
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? 'Saindo…' : 'Sair'}
               </Button>
             </>
           ) : (

@@ -1,4 +1,5 @@
 import { AccountProfileForm } from '@/features/account';
+import { RequireAuth } from '@/features/auth';
 import { Container } from '@/shared/components/layout/Container';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 
@@ -10,7 +11,9 @@ export default function AccountPage() {
   return (
     <Container>
       <PageHeader title="Minha conta" description="Atualize seus dados pessoais." />
-      <AccountProfileForm />
+      <RequireAuth>
+        <AccountProfileForm />
+      </RequireAuth>
     </Container>
   );
 }

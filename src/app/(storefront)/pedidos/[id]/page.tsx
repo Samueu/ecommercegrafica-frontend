@@ -1,3 +1,4 @@
+import { RequireAuth } from '@/features/auth';
 import { OrderDetailView } from '@/features/orders';
 import { Container } from '@/shared/components/layout/Container';
 
@@ -15,7 +16,9 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
 
   return (
     <Container>
-      <OrderDetailView orderId={id} />
+      <RequireAuth>
+        <OrderDetailView orderId={id} />
+      </RequireAuth>
     </Container>
   );
 }

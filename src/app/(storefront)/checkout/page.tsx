@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { RequireAuth } from '@/features/auth';
 import { CheckoutWizard } from '@/features/checkout';
 import { Container } from '@/shared/components/layout/Container';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -12,9 +13,11 @@ export default function CheckoutPage() {
   return (
     <Container>
       <PageHeader title="Checkout" description="Finalize seu pedido em poucos passos." />
-      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-        <CheckoutWizard />
-      </Suspense>
+      <RequireAuth>
+        <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+          <CheckoutWizard />
+        </Suspense>
+      </RequireAuth>
     </Container>
   );
 }

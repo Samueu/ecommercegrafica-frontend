@@ -1,21 +1,19 @@
 services:
   - type: web
-    name: next-js
+    name: ecommercegrafica-frontend
     runtime: node
     plan: starter
-    buildCommand: npm; npm build
+    buildCommand: npm ci && npm run build
     startCommand: npm start
-    autoDeploy: false
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-# Uncomment the following to deploy this app as a static site on render
-# - type: web
-#   name: nextjs-static
-#   runtime: static
-#   buildCommand: yarn; yarn build
-#   staticPublishPath: out
-#   pullRequestPreviewsEnabled: true     # optional
-#   envVars:
-#   - key: NODE_ENV
-#     value: production
+      - key: NODE_VERSION
+        value: "22"
+
+      # URL pública da API .NET no Render.
+      # IMPORTANTE: NEXT_PUBLIC_* é embutido no bundle em build-time, então
+      # qualquer mudança aqui exige redeploy do frontend.
+      - key: NEXT_PUBLIC_API_URL
+        value: https://ecommercegrafica-backend.onrender.com
