@@ -1,7 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { getProductById, getProducts } from '@/features/catalog/api/catalog.api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createProduct,
+  getProductById,
+  getProducts,
+  type CreateProductInput,
+} from '@/features/catalog/api/catalog.api';
 
 export function useProducts() {
   return useQuery({
@@ -18,5 +23,15 @@ export function useProduct(id: string) {
     queryKey: ['catalog', 'detail', id],
     queryFn: () => getProductById(id),
     enabled: Boolean(id),
+  });
+}
+
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateProductInput) => createProduct(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] });
+    },
   });
 }

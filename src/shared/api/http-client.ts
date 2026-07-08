@@ -38,15 +38,28 @@ type ApiFetchInit = Omit<RequestInit, 'body'> & {
 export async function apiFetch<T>(path: string, init: ApiFetchInit = {}): Promise<T> {
   const { body, headers, credentials = 'include', ...rest } = init;
 
+  // Quando o body é FormData, deixamos o browser definir o Content-Type
+  // (ele precisa incluir o boundary correto do multipart) e não serializamos com JSON.
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
+  let requestBody: BodyInit | undefined;
+  if (body === undefined) {
+    requestBody = undefined;
+  } else if (isFormData) {
+    requestBody = body as FormData;
+  } else {
+    requestBody = JSON.stringify(body);
+  }
+
   const response = await fetch(`${env.apiUrl}${path}`, {
     ...rest,
     credentials,
     headers: {
       Accept: 'application/json',
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(body !== undefined && !isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...headers,
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: requestBody,
   });
 
   if (!response.ok) {

@@ -6,6 +6,15 @@ import {
 import { apiFetch } from '@/shared/api/http-client';
 import { endpoints } from '@/shared/api/endpoints';
 
+export type CreateProductInput = {
+  name: string;
+  description: string;
+  price: number;
+  currency?: string;
+  typeCode: number;
+  imageFile?: File | null;
+};
+
 export async function getProducts(): Promise<Product[]> {
   const data = await apiFetch<ProdutoDto[]>(endpoints.catalog.products);
   return data.map(mapProdutoDtoToProduct);
@@ -19,4 +28,24 @@ export async function getProductById(id: string): Promise<Product | undefined> {
     const list = await getProducts();
     return list.find((p) => p.id === id);
   }
+}
+
+export async function createProduct(input: CreateProductInput): Promise<Product> {
+  const formData = new FormData();
+  formData.append('Nome', input.name);
+  formData.append('Descricao', input.description);
+  formData.append('Preco', String(input.price));
+  formData.append('Tipo', String(input.typeCode));
+  if (input.currency) {
+    formData.append('Moeda', input.currency);
+  }
+  if (input.imageFile) {
+    formData.append('Imagem', input.imageFile);
+  }
+
+  const dto = await apiFetch<ProdutoDto>(endpoints.catalog.products, {
+    method: 'POST',
+    body: formData,
+  });
+  return mapProdutoDtoToProduct(dto);
 }
