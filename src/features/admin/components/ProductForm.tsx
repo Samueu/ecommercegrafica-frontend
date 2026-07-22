@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { useCreateProduct } from '@/features/catalog/hooks/useProducts';
+import { MAX_PRODUCT_IMAGES } from '@/entities/product/product.types';
 import { ApiError } from '@/shared/api/http-client';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -41,20 +42,25 @@ const productFormSchema = z.object({
   typeCode: z
     .string()
     .refine((v) => ['1', '2', '3', '4', '5'].includes(v), 'Selecione um tipo válido.'),
-  image: z
-    .custom<FileList | undefined>()
-    .optional()
-    .refine(
-      (files) => !files || files.length === 0 || ACCEPTED_MIME.includes(files[0].type),
-      'Formato inválido. Envie JPG, PNG ou WEBP.',
-    )
-    .refine(
-      (files) => !files || files.length === 0 || files[0].size <= MAX_IMAGE_BYTES,
-      'A imagem deve ter no máximo 5 MB.',
-    ),
 });
 
 type ProductFormValues = z.input<typeof productFormSchema>;
+
+type PreviewItem = {
+  id: string;
+  file: File;
+  url: string;
+};
+
+function validateImageFile(file: File): string | null {
+  if (!ACCEPTED_MIME.includes(file.type)) {
+    return `"${file.name}": formato inválido. Envie JPG, PNG ou WEBP.`;
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return `"${file.name}": tamanho máximo de 5 MB.`;
+  }
+  return null;
+}
 
 export function ProductForm() {
   const {
@@ -62,7 +68,6 @@ export function ProductForm() {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -71,35 +76,69 @@ export function ProductForm() {
       description: '',
       price: 0,
       typeCode: '1',
-      image: undefined,
     },
   });
 
   const createProduct = useCreateProduct();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  const watchedImage = watch('image');
-  const selectedFile = useMemo(() => {
-    if (!watchedImage || watchedImage.length === 0) return null;
-    return watchedImage[0];
-  }, [watchedImage]);
+  const [previews, setPreviews] = useState<PreviewItem[]>([]);
+  const previewsRef = useRef(previews);
+  previewsRef.current = previews;
 
   useEffect(() => {
-    if (!selectedFile) {
-      setPreviewUrl(null);
+    return () => {
+      previewsRef.current.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+  }, []);
+
+  const handleFilesSelected = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+
+    const incoming = Array.from(fileList);
+    const slotsLeft = MAX_PRODUCT_IMAGES - previews.length;
+
+    if (slotsLeft <= 0) {
+      toast.error(`Máximo de ${MAX_PRODUCT_IMAGES} imagens por produto.`);
       return;
     }
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
 
-  const { ref: imageFieldRef, ...imageFieldRest } = register('image');
+    const toAdd = incoming.slice(0, slotsLeft);
+    if (incoming.length > slotsLeft) {
+      toast.message(`Somente ${slotsLeft} imagem(ns) adicionada(s) (limite ${MAX_PRODUCT_IMAGES}).`);
+    }
+
+    for (const file of toAdd) {
+      const error = validateImageFile(file);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+    }
+
+    setPreviews((current) => [
+      ...current,
+      ...toAdd.map((file) => ({
+        id: `${file.name}-${file.size}-${crypto.randomUUID()}`,
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    ]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removePreview = (id: string) => {
+    setPreviews((current) => {
+      const item = current.find((p) => p.id === id);
+      if (item) URL.revokeObjectURL(item.url);
+      return current.filter((p) => p.id !== id);
+    });
+  };
 
   const onSubmit = async (values: ProductFormValues) => {
     const parsed = productFormSchema.parse(values);
-    const imageFile = parsed.image && parsed.image.length > 0 ? parsed.image[0] : undefined;
 
     try {
       const created = await createProduct.mutateAsync({
@@ -107,19 +146,14 @@ export function ProductForm() {
         description: parsed.description ?? '',
         price: parsed.price,
         typeCode: Number(parsed.typeCode),
-        imageFile,
+        imageFiles: previews.map((p) => p.file),
       });
       toast.success(`Produto "${created.name}" cadastrado com sucesso.`);
-      reset({
-        name: '',
-        description: '',
-        price: 0,
-        typeCode: '1',
-        image: undefined,
+      reset({ name: '', description: '', price: 0, typeCode: '1' });
+      setPreviews((current) => {
+        current.forEach((p) => URL.revokeObjectURL(p.url));
+        return [];
       });
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     } catch (err) {
       const message =
         err instanceof ApiError ? err.friendlyMessage : 'Não foi possível cadastrar o produto.';
@@ -177,35 +211,51 @@ export function ProductForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="image">Imagem do produto</Label>
+        <Label htmlFor="images">Imagens do produto</Label>
         <Input
-          id="image"
+          id="images"
+          ref={fileInputRef}
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          {...imageFieldRest}
-          ref={(el) => {
-            imageFieldRef(el);
-            fileInputRef.current = el;
-          }}
+          multiple
+          onChange={(e) => handleFilesSelected(e.target.files)}
         />
         <p className="text-xs text-muted-foreground">
-          JPG, PNG ou WEBP. Tamanho máximo: 5 MB.
+          JPG, PNG ou WEBP. Até {MAX_PRODUCT_IMAGES} imagens, 5 MB cada. A primeira será a capa
+          do carrossel.
         </p>
-        {errors.image && (
-          <p className="text-sm text-destructive">{errors.image.message as string}</p>
-        )}
-        {previewUrl && (
-          <div className="mt-2 overflow-hidden rounded-md border border-border">
-            <Image
-              src={previewUrl}
-              alt="Pré-visualização"
-              width={320}
-              height={240}
-              className="h-40 w-auto object-cover"
-              unoptimized
-            />
-          </div>
-        )}
+
+        {previews.length > 0 ? (
+          <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {previews.map((preview, index) => (
+              <li
+                key={preview.id}
+                className="relative overflow-hidden rounded-md border border-border"
+              >
+                <Image
+                  src={preview.url}
+                  alt={`Pré-visualização ${index + 1}`}
+                  width={160}
+                  height={120}
+                  className="h-28 w-full object-cover"
+                  unoptimized
+                />
+                <span className="bg-background/80 absolute top-1 left-1 rounded px-1.5 text-xs">
+                  {index === 0 ? 'Capa' : index + 1}
+                </span>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute right-1 bottom-1 h-7 px-2 text-xs"
+                  onClick={() => removePreview(preview.id)}
+                >
+                  Remover
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       <Button type="submit" disabled={createProduct.isPending}>

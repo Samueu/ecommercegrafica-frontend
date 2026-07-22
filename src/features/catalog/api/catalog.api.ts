@@ -12,7 +12,7 @@ export type CreateProductInput = {
   price: number;
   currency?: string;
   typeCode: number;
-  imageFile?: File | null;
+  imageFiles?: File[];
 };
 
 export async function getProducts(): Promise<Product[]> {
@@ -39,8 +39,8 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
   if (input.currency) {
     formData.append('Moeda', input.currency);
   }
-  if (input.imageFile) {
-    formData.append('Imagem', input.imageFile);
+  for (const file of input.imageFiles ?? []) {
+    formData.append('Imagens', file);
   }
 
   const dto = await apiFetch<ProdutoDto>(endpoints.catalog.products, {

@@ -1,9 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useProduct } from '@/features/catalog/hooks/useProducts';
+import { ProductImageCarousel } from '@/features/catalog/components/ProductImageCarousel';
 import { useCartStore } from '@/features/cart/store/cart-store';
+import { getProductImageUrls } from '@/entities/product/product.types';
 import { Button } from '@/shared/components/ui/button';
 import { ErrorState } from '@/shared/components/layout/ErrorState';
 import { Skeleton } from '@/shared/components/ui/skeleton';
@@ -34,11 +35,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
 
   return (
     <div className="grid gap-8 lg:grid-cols-2">
-      <div className="bg-muted relative aspect-square overflow-hidden rounded-xl">
-        {product.imageUrl ? (
-          <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
-        ) : null}
-      </div>
+      <ProductImageCarousel images={getProductImageUrls(product)} alt={product.name} />
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-semibold">{product.name}</h1>
