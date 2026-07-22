@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = 'https://ecommercegrafica-backend.onrender.com';
+const DEFAULT_API_URL = 'https://api.mariacristinagrafica.shop';
 
 export const env = {
   apiUrl:

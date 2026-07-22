@@ -12,8 +12,7 @@ services:
       - key: NODE_VERSION
         value: "22"
 
-      # URL pública da API .NET no Render.
-      # IMPORTANTE: NEXT_PUBLIC_* é embutido no bundle em build-time, então
-      # qualquer mudança aqui exige redeploy do frontend.
+      # URL pública da API .NET.
+      # NEXT_PUBLIC_* é embutido no bundle em build-time — mudanças exigem redeploy.
       - key: NEXT_PUBLIC_API_URL
-        value: https://ecommercegrafica-backend.onrender.com
+        value: https://api.mariacristinagrafica.shop

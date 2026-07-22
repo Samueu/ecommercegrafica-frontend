@@ -5,4 +5,6 @@
 
 ## Variáveis de ambiente
 
-`NEXT_PUBLIC_API_URL` — URL base da API (default: `https://ecommercegrafica-backend.onrender.com`).
+`NEXT_PUBLIC_API_URL` — URL base da API (default: `https://api.mariacristinagrafica.shop`).
+
+Copie `.env.example` para `.env.local` e reinicie o dev server após alterações.
